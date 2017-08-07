@@ -1,0 +1,10 @@
+node_modules
+yarn.lock
+build
+contracts/zeppelin
+.memo
+.settings
+originalContracts
+solcover
+coverage
+coverage.json

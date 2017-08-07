@@ -1,5 +1,5 @@
 # ENS (Ethereum Name Service) Bid Token Contracts
-Implementations ERC20 token contract for ens-bid project.
+Implementations ERC20 token contract for the Ethereum Name Service.
 
 ## Contracts
 
@@ -8,7 +8,7 @@ Contract structure
 EnsBidToken
 ```
 
-ENSBidToken.sol: ERC20 for ens-bid.
+ENSBidToken.sol: ERC20 Token for ens-bid.
 
 # Getting started
 
@@ -33,6 +33,6 @@ Check the truffle [documentation](http://truffleframework.com/docs/) for more in
 
 # Reviewers And Audits
 
-Code for the ens-bid is being reviewed by:
+Code for the EnsBid is being reviewed by:
 
 - [Phyrex Tsai](https://github.com/PhyrexTsai), Author.
