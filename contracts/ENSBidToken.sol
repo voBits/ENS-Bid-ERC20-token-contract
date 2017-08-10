@@ -124,9 +124,9 @@ contract ENSBidToken is StandardToken, Ownable {
 
   /**
    * @dev payment function, transfer eth to token
-   * @param _payee The payee address
+   * @param _sender The sender address
    */
-  function proxyPayment(address _payee) public payable notPaused isInitialized isContractOpen returns (bool) {
+  function proxyPayment(address _sender) public payable notPaused isInitialized isContractOpen returns (bool) {
     require(msg.value > 0);
 
     uint256 amount = msg.value;
@@ -137,7 +137,7 @@ contract ENSBidToken is StandardToken, Ownable {
     uint256 totalTokens = tokens * 2;
     require(totalSupply.add(totalTokens) <= maxTokenSupply);
     totalSupply = totalSupply.add(totalTokens);
-    balances[msg.sender] = balances[msg.sender].add(tokens);      // 發送 token 給投資者
+    balances[_sender] = balances[_sender].add(tokens);      // 發送 token 給投資者
     balances[owner] = balances[owner].add(tokens);                // 發送 token 給開發者
 
     require(owner.send(amount - refund));                         // 扣掉退款金額，將ETH轉到owner錢包中

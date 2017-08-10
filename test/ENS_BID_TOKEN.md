@@ -1,0 +1,31 @@
+# Test Cases
+
+- owner initialize with parameters
+    - [x] `proxyPayment`, `sendTransaction`: before owner initialize should fail when send transaction
+    - [x] `initialize`: owner send wrong parameters should fail
+    - [x] `initialize`: owner send wrong parameters should success
+- sender buy token
+    - [x] `proxyPayment`, `sendTransaction`: less then ether limit should fail
+    - [x] `proxyPayment`, `sendTransaction`: over then ether limit should success
+    - [x] `proxyPayment`, `sendTransaction`: should refund when more then expect ether
+- anyone can finalize 
+    - [x] `finalize`: anyone should finalize fail when not over end block
+    - [x] `finalize`: owner should finalize at anytime, before or after end block
+    - [x] `finalize`: anyone should fail send transaction after finalize
+- sender transfer token
+    - [ ] `transfer`: new sender should add to sender list correctly
+    - [ ] `transfer`: sender should transfer success when contract non paused
+    - [ ] `transfer`: sender should transfer fail when contract paused
+    - [ ] `transfer`: over token limit should fail
+    - [ ] `approve`: allow another sender to withdraw from origin sender account
+    - [ ] `allowance`: returns the amount which another sender is still allowed to withdraw from origin sender
+    - [ ] `transferFrom`: sender transfer tokens from one address to another
+- owner transfer token
+    - [ ] `transfer`: owner should transfer fail when token locked
+    - [ ] `transfer`: owner should transfer success when token unlocked
+- owner pause contract
+    - [x] `pauseContract`: should pause contract success
+    - [x] `resumeContract`: should resume contract success
+- ownership switch
+    - [x] `transferOwnership`: transfer ownership should fail when not owner
+    - [x] `transferOwnership`: transfer ownership should success when not owner
