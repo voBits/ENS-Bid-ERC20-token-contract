@@ -6,9 +6,9 @@ import "./ownership/Ownable.sol";
 contract ENSBidToken is StandardToken, Ownable {
   // [x] 實作 ERC20 
   // [x] 股權形式分配的 Token 模式
-  // 開發團隊的 Token 鎖定一年
+  // [ ] 開發團隊的 Token 鎖定一年
   // [x] 發售 50%，開發團隊 50%
-  // 分潤模式，提供一個 function 可以提供給其他合約調用
+  // [ ] 分潤模式，提供一個 function 可以提供給其他合約調用
 
   event Finalized();
 
