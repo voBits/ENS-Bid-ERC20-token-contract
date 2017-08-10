@@ -4,10 +4,10 @@ import "./token/StandardToken.sol";
 import "./ownership/Ownable.sol";
 
 contract ENSBidToken is StandardToken, Ownable {
-  // 實作 ERC20 
-  // 股權形式分配的 Token 模式
+  // [x] 實作 ERC20 
+  // [x] 股權形式分配的 Token 模式
   // 開發團隊的 Token 鎖定一年
-  // 發售 50%，開發團隊 50%
+  // [x] 發售 50%，開發團隊 50%
   // 分潤模式，提供一個 function 可以提供給其他合約調用
 
   event Finalized();
@@ -132,17 +132,17 @@ contract ENSBidToken is StandardToken, Ownable {
     uint256 amount = msg.value;
     require(amount >= minInvestInWei); 
 
-    uint256 refund = amount % minInvestInWei;             // 退款機制
-    uint256 tokens = (amount - refund) / minInvestInWei;  // 透過最小投注金額換算所得的token數量  
+    uint256 refund = amount % minInvestInWei;                     // 退款機制
+    uint256 tokens = (amount - refund) / minInvestInWei;          // 透過最小投注金額換算所得的token數量  
+    uint256 totalTokens = tokens * 2;
+    require(totalSupply.add(totalTokens) <= maxTokenSupply);
+    totalSupply = totalSupply.add(totalTokens);
+    balances[msg.sender] = balances[msg.sender].add(tokens);      // 發送 token 給投資者
+    balances[owner] = balances[owner].add(tokens);                // 發送 token 給開發者
 
-    require(totalSupply.add(tokens) <= maxTokenSupply);
-    totalSupply = totalSupply.add(tokens);
-    balances[_payee] = balances[_payee].add(tokens);      // 發送 token 給投資者
-    balances[owner] = balances[owner].add(tokens);        // 發送 token 給開發者
-
-    require(owner.send(amount - refund));                 // 扣掉退款金額，將ETH轉到owner錢包中
+    require(owner.send(amount - refund));                         // 扣掉退款金額，將ETH轉到owner錢包中
     if (refund > 0) {
-      require(msg.sender.send(refund));                   // 傳送退款金額給 msg.sender
+      require(msg.sender.send(refund));                           // 傳送退款金額給 msg.sender
     }
     return true;
   }
