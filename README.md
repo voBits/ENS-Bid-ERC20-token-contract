@@ -1,35 +1,30 @@
 # ENS (Ethereum Name Service) Bid Token Contracts
-Implementations ERC20 token contract for the Ethereum Name Service.
+Implementations ENS-Bid ERC20 token contract for the Ethereum Name Service.
+
+## Technical Definition
+ 
+At the technical level ENSBidToken are a ERC20-compliant tokens.  
+Symbol will named: EBT.
+
+## Techincal Stack
+
+Use `truffle` to create, compile, deploy and test smart contract.  
+Use `open zeppelin` for smart contract security.  
+Use `testrpc` for local testing.
+
+## Testing
+
+See [test](test) for details.
 
 ## Contracts
 
-Contract structure
-```
-EnsBidToken
-```
-
-ENSBidToken.sol: ERC20 Token for ens-bid.
-
-# Getting started
-
-Install Truffle
-
-```
-$ npm install -g truffle
-```
-
-Launch the RPC client, for example TestRPC:
-```
-$ testrpc
-```
-
-Deploy `ENSBidToken` to the private network, the deployment process is defined at [here](./migrations/2_deploy_contracts.js):
-
-```
-$ truffle migrate --reset
-```
-
-Check the truffle [documentation](http://truffleframework.com/docs/) for more information.
+[ENSBidToken.sol](./contracts/ENSBidToken.sol): Main contract for the token, ENS-Bid follows ERC20 standard.  
+[BasicToken.sol](./contracts/token/BasicToken.sol): ERC20Basic.sol interface implementation.  
+[StandardToken.sol](./contracts/token/StandardToken.sol): ERC20.sol interface implementation.  
+[ERC20.sol](./contracts/token/ERC20.sol): ERC20 standard interfaces.  
+[ERC20Basic.sol](./contracts/token/ERC20Basic.sol): ERC20 basic interfaces.  
+[Ownable.sol](./contracts/ownership/Ownable.sol): Owner ship.  
+[SafeMath.sol](./contracts/math/SafeMath.sol): Math operations with safety checks.  
 
 # Reviewers And Audits
 
