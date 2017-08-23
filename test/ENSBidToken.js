@@ -58,7 +58,7 @@ contract("ENSBidToken", function(accounts) {
   it("1.3. owner send correct parameters should success", function() {
     var ensBidToken;
     var name = "ENSBidToken";
-    var symbol = "CABS";
+    var symbol = "EBT";
     var decimals = 0;
     var startBlock = web3.eth.blockNumber + 2;    // each transaction will add 1 block number
     var endBlock = web3.eth.blockNumber + 10;
