@@ -8,8 +8,9 @@ contract ENSBidToken is StandardToken, Ownable {
   // [x] 股權形式分配的 Token 模式
   // [ ] 開發團隊的 Token 鎖定一年
   // [x] 發售 50%，開發團隊 50%
-  // [ ] 分潤模式，提供一個 function 可以提供給其他合約調用
+  // [x] 分潤模式，提供一個 function 可以將分配利潤發放給 token holder
 
+  event ShareBenefit(string _tx, address _shareHolder, uint256 _balance, uint256 _shareBenefit);
   event Finalized();
 
   string public name;                                   // 名稱
@@ -26,6 +27,17 @@ contract ENSBidToken is StandardToken, Ownable {
   bool public initialized;                              // 合約啟動
   uint256 public finalizedBlock;                        // 合約終止投資的區塊編號
   uint256 public finalizedTime;                         // 合約終止投資的時間
+
+  struct ShareHolder {
+    bool isExists;
+    bool isPayable;
+    uint256 shareBenefitInWei;  
+  }
+
+  ShareHolder public shareHolder;
+
+  mapping (address => ShareHolder) public shareHolders; 
+  address[] public shareHolderArray;                    // share holder array
   
   /**
    * @dev Throws if contract paused.
@@ -137,8 +149,14 @@ contract ENSBidToken is StandardToken, Ownable {
     uint256 totalTokens = tokens * 2;
     require(totalSupply.add(totalTokens) <= maxTokenSupply);
     totalSupply = totalSupply.add(totalTokens);
-    balances[_sender] = balances[_sender].add(tokens);      // 發送 token 給投資者
+    balances[_sender] = balances[_sender].add(tokens);            // 發送 token 給投資者
     balances[owner] = balances[owner].add(tokens);                // 發送 token 給開發者
+
+    if (shareHolders[msg.sender].isExists != true) {
+      shareHolders[msg.sender].isExists = true;
+      shareHolders[msg.sender].isPayable = true;
+      shareHolderArray.push(msg.sender);
+    }
 
     require(owner.send(amount - refund));                         // 扣掉退款金額，將ETH轉到owner錢包中
     if (refund > 0) {
@@ -166,5 +184,52 @@ contract ENSBidToken is StandardToken, Ownable {
    */
   function getBlockNumber() internal constant returns (uint256) {
     return block.number;
+  }
+
+  /**
+   * @dev ERC20 transfer
+   */
+  function transfer(address _to, uint256 _value) returns (bool) {
+    balances[msg.sender] = balances[msg.sender].sub(_value);
+    balances[_to] = balances[_to].add(_value);
+    if (shareHolders[_to].isExists != true) {
+      shareHolders[_to].isExists = true;
+      shareHolders[_to].isPayable = true;
+      shareHolderArray.push(_to);
+    }
+    Transfer(msg.sender, _to, _value);
+    return true;
+  }
+
+  /**
+   * @dev ERC20 transferFrom
+   */
+  function transferFrom(address _from, address _to, uint256 _value) returns (bool) {
+    var _allowance = allowed[_from][msg.sender];
+    balances[_to] = balances[_to].add(_value);
+    balances[_from] = balances[_from].sub(_value);
+    allowed[_from][msg.sender] = _allowance.sub(_value);
+    if (shareHolders[_to].isExists != true) {
+      shareHolders[_to].isExists = true;
+      shareHolders[_to].isPayable = true;
+      shareHolderArray.push(_to);
+    }
+    Transfer(_from, _to, _value);
+    return true;
+  }
+
+  /**
+   * gas per address: 5560
+   * @dev share in the benefit
+   * @param _address address of token holders
+   * @param _benefitInWei benefit in wei to token holders
+   */
+  function shareBenefit(address[] _address, uint256[] _benefitInWei) onlyOwner {
+    uint256 i = 0;
+    while (i < _address.length) {
+      address _shareHolder = _address[i];
+      shareHolders[_shareHolder].shareBenefitInWei += _benefitInWei[i];
+      i++;
+    }
   }
 }
