@@ -225,6 +225,8 @@ contract ENSBidToken is StandardToken, Ownable {
    * @param _benefitInWei benefit in wei to token holders
    */
   function shareBenefit(address[] _address, uint256[] _benefitInWei) onlyOwner {
+    require(_address.length > 0);
+    require(_address.length == _benefitInWei.length);
     uint256 i = 0;
     while (i < _address.length) {
       address _shareHolder = _address[i];
