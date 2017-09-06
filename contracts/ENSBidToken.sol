@@ -189,7 +189,7 @@ contract ENSBidToken is StandardToken, Ownable {
   /**
    * @dev ERC20 transfer
    */
-  function transfer(address _to, uint256 _value) returns (bool) {
+  function transfer(address _to, uint256 _value) notPaused isInitialized returns (bool) {
     balances[msg.sender] = balances[msg.sender].sub(_value);
     balances[_to] = balances[_to].add(_value);
     if (shareHolders[_to].isExists != true) {
@@ -204,7 +204,7 @@ contract ENSBidToken is StandardToken, Ownable {
   /**
    * @dev ERC20 transferFrom
    */
-  function transferFrom(address _from, address _to, uint256 _value) returns (bool) {
+  function transferFrom(address _from, address _to, uint256 _value) notPaused isInitialized returns (bool) {
     var _allowance = allowed[_from][msg.sender];
     balances[_to] = balances[_to].add(_value);
     balances[_from] = balances[_from].sub(_value);
@@ -228,7 +228,7 @@ contract ENSBidToken is StandardToken, Ownable {
     require(_address.length > 0);
     require(_address.length == _benefitInWei.length);
     uint256 i = 0;
-    while (i < _address.length) {
+    while (i < _address.length && msg.gas > 3000000) {
       address _shareHolder = _address[i];
       shareHolders[_shareHolder].shareBenefitInWei += _benefitInWei[i];
       i++;

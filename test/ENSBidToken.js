@@ -192,6 +192,163 @@ contract("ENSBidToken", function(accounts) {
   });
 
   /**
+   * 4.1. new payee should add to payee list correctly
+   * 4.2. payee should transfer success when contract non paused
+   */
+  it("4.1. new sender should add to sender list correctly \r\n      4.2. sender should transfer success when contract non paused", function() {
+    var ensBidToken;
+    var token = 1;
+    var receiver_start_token;
+    var receiver_end_token;
+
+    return ENSBidToken.deployed().then(function(instance) {
+      ensBidToken = instance;
+      return ensBidToken.balanceOf(accounts[3]);
+    }).then(function(balance) {
+      receiver_start_token = balance.valueOf();
+      return ensBidToken.transfer(accounts[3], token, {from: accounts[2]});
+    }).then(function() {
+      return ensBidToken.balanceOf(accounts[3]);
+    }).then(function(balance) {
+      receiver_end_token = balance.valueOf();
+      assert.equal(receiver_end_token - token, receiver_start_token, "token transfer wasn't correctly");
+    });
+  });
+
+  /**
+   * 5.1. should pause contract success
+   */
+  it("5.1. should pause contract success", function() {
+    var ensBidToken;
+
+    return ENSBidToken.deployed().then(function(instance) {
+      ensBidToken = instance;
+      return ensBidToken.pauseContract();
+    }).then(function() {
+      return ensBidToken.paused.call();
+    }).then(function(paused) {
+      assert.equal(paused, true, "pause contract wasn't correctly");
+    });
+  });
+
+  /**
+   * 4.3. sender should transfer fail when contract paused
+   */
+  it("4.3. sender should transfer fail when contract paused", function() {
+    var ensBidToken;
+    var token = 1;
+    var receiver_start_token;
+    var receiver_end_token;
+
+    return ENSBidToken.deployed().then(function(instance) {
+      ensBidToken = instance;
+      return ensBidToken.balanceOf(accounts[3]);
+    }).then(function(balance) {
+      receiver_start_token = balance.valueOf();
+      return ensBidToken.transfer(accounts[3], token, {from: accounts[2]});
+    }).then(function() {
+      assert.equal(false, true, "sender transfer fail when contract paused wasn't correctly");
+    }).catch(function(err) {
+      assert.isDefined(err, "transfer fail when contract paused");
+      return ensBidToken.balanceOf(accounts[3]);
+    }).then(function(balance) {
+      receiver_end_token = balance.valueOf();
+      assert.equal(receiver_end_token, receiver_start_token, "token transfer wasn't correctly");
+    });
+  });
+
+  /**
+   * 4.4. over token limit should fail
+   */
+  it("4.4. over token limit should fail", function() {
+    var ensBidToken;
+    var token = 10;
+    var receiver_start_token;
+    var receiver_end_token;
+
+    return ENSBidToken.deployed().then(function(instance) {
+      ensBidToken = instance;
+      return ensBidToken.balanceOf(accounts[3]);
+    }).then(function(balance) {
+      receiver_start_token = balance.valueOf();
+      return ensBidToken.transfer(accounts[3], token, {from: accounts[2]});
+    }).then(function() {
+      assert.equal(false, true, "sender transfer fail wasn't correctly");
+    }).catch(function(err) {
+      assert.isDefined(err, "transfer fail when contract paused");
+      return ensBidToken.balanceOf(accounts[3]);
+    }).then(function(balance) {
+      receiver_end_token = balance.valueOf();
+      assert.equal(receiver_end_token, receiver_start_token, "token transfer wasn't correctly");
+    });
+  });
+
+  /**
+   * 4.5. allow another sender to withdraw from origin sender account
+   */
+  it("4.5. allow another sender to withdraw from origin sender account \r\n      " + 
+    "4.6. returns the amount which another sender is still allowed to withdraw from origin sender", function() {
+    var ensBidToken;
+
+    return ENSBidToken.deployed().then(function(instance) {
+      ensBidToken = instance;
+      return ensBidToken.approve(accounts[7], 1, {from: accounts[4]});
+    }).then(function() {
+      return ensBidToken.allowance(accounts[4], accounts[7]);
+    }).then(function(remaing) {
+      assert.equal(remaing, 1, "remaing token amount wasn't correctly");
+    });
+  });
+
+  /**
+   * 5.2. should resume contract success
+   */
+  it("5.2. should resume contract success", function() {
+    var ensBidToken;
+
+    return ENSBidToken.deployed().then(function(instance) {
+      ensBidToken = instance;
+      return ensBidToken.resumeContract();
+    }).then(function() {
+      return ensBidToken.paused.call();
+    }).then(function(paused) {
+      assert.equal(paused, false, "resume contract wasn't correctly");
+    });
+  });
+
+  /**
+   * 4.7. sender transfer tokens from one address to another
+   */
+  it("4.7. sender transfer tokens from one address to another", function() {
+    var ensBidToken;
+    var sender_start_token;
+    var sender_end_token;
+    var receiver_start_token;
+    var receiver_end_token;
+    var token = 1;
+
+    return ENSBidToken.deployed().then(function(instance) {
+      ensBidToken = instance;
+      return ensBidToken.balanceOf(accounts[4]);
+    }).then(function(balance) {
+      sender_start_token = balance.toNumber();
+      return ensBidToken.balanceOf(accounts[7]);
+    }).then(function(balance) {
+      receiver_start_token = balance.toNumber();
+      return ensBidToken.transferFrom(accounts[4], accounts[7], token, {from: accounts[7]});
+    }).then(function() {
+      return ensBidToken.balanceOf(accounts[4]);
+    }).then(function(balance) {
+      sender_end_token = balance.toNumber();
+      return ensBidToken.balanceOf(accounts[7]);
+    }).then(function(balance) {
+      receiver_end_token = balance.toNumber();
+      assert.equal(sender_start_token - token, sender_end_token, "sender token balance wasn't correctly");
+      assert.equal(receiver_end_token - token, receiver_start_token, "receiver token balance wasn't correctly");
+    });
+  });
+
+  /**
    * 6.1. should pause contract success
    */
   it("6.1. should pause contract success", function() {
