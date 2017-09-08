@@ -1,8 +1,10 @@
+var sleep = require("sleep");
 var ENSBidToken = artifacts.require("../contracts/ENSBidToken.sol");
 
 contract("ENSBidToken", function(accounts) {
   var tokenExchangeRate = 10000000000000000;
   var unixTime = Math.round(new Date() / 1000);
+  var lockoutTime = 5;
 
   /**
    * 1.1 before owner initialize should fail when send transaction
@@ -29,7 +31,9 @@ contract("ENSBidToken", function(accounts) {
     var decimals = 0;
     var startBlock = web3.eth.blockNumber;            // each transaction will add 1 block number
     var endBlock = web3.eth.blockNumber + 10000;
+    var ownerWalletAddress = accounts[0];
     var initializedTime = 0;                      
+    var lockoutTime = 0;
     var minInvestInWei = 10000000000000000;             // 購買 Token 最小單位
     var maxTokenSupply = 1000000;
     return ENSBidToken.deployed().then(function(instance) {
@@ -39,9 +43,11 @@ contract("ENSBidToken", function(accounts) {
         symbol,
         decimals,
         ensBidToken.address,
+        ownerWalletAddress,
         startBlock, 
         endBlock, 
         initializedTime,
+        lockoutTime,
         minInvestInWei,
         maxTokenSupply);
     }).catch(function(err) {
@@ -62,7 +68,10 @@ contract("ENSBidToken", function(accounts) {
     var decimals = 0;
     var startBlock = web3.eth.blockNumber + 2;    // each transaction will add 1 block number
     var endBlock = web3.eth.blockNumber + 10;
-    var initializedTime = unixTime;               
+    var ownerWalletAddress = accounts[0];
+    var initializedTime = unixTime;             
+    var lockoutTime = 60 * 60 * 24 * 365;         // 預設鎖定一年，測試的時候可以減少時間
+    lockoutTime = 10;
     var minInvestInWei = 10000000000000000;       // 購買 Token 最小單位
     var maxTokenSupply = 10000;
     return ENSBidToken.deployed().then(function(instance) {
@@ -72,9 +81,11 @@ contract("ENSBidToken", function(accounts) {
         symbol,
         decimals,
         ensBidToken.address,
+        ownerWalletAddress,
         startBlock, 
         endBlock, 
         initializedTime,
+        lockoutTime,
         minInvestInWei,
         maxTokenSupply);
     }).then(function() {
@@ -349,6 +360,114 @@ contract("ENSBidToken", function(accounts) {
   });
 
   /**
+   * 4.8. funder should transfer fail during lock period
+   */
+  it("4.8. funder should transfer fail during lock period", function() {
+    var ensBidToken;
+    var token = 1;
+
+    return ENSBidToken.deployed().then(function(instance) {
+      ensBidToken = instance;
+      return ensBidToken.transfer(accounts[3], token, {from: accounts[0]});
+    }).then(function() {
+      assert.equal(false, true, "funder transfer fail wasn't correctly");
+    }).catch(function(err) {
+      assert.isDefined(err, "funder transfer fail when in lockout time");
+    });
+  });
+
+  /**
+   * 4.9. funder should transfer tokens from one address to another fail during lock period
+   */
+  it("4.9. funder should transfer tokens from one address to another fail during lock period", function() {
+    var ensBidToken;
+    var token = 1;
+
+    return ENSBidToken.deployed().then(function(instance) {
+      ensBidToken = instance;
+      return ensBidToken.transferFrom(accounts[0], accounts[4], token, {from: accounts[4]});
+    }).then(function() {
+      assert.equal(false, true, "funder transferFrom fail wasn't correctly");
+    }).catch(function(err) {
+      assert.isDefined(err, "funder transferFrom fail when in lockout time");
+    });
+  });
+
+  /**
+   * 4.10. funder should transfer success over lock period
+   */
+  it("4.10. funder should transfer success over lock period", function() {
+    var ensBidToken;
+    var token = 1;
+    var receiver_start_token;
+    var receiver_end_token;
+
+    return ENSBidToken.deployed().then(function(instance) {
+      ensBidToken = instance;
+      return ensBidToken.balanceOf(accounts[3]);
+    }).then(function(balance) {
+      receiver_start_token = balance.valueOf();
+      sleep.sleep(15);
+      return ensBidToken.transfer(accounts[3], token, {from: accounts[0]});
+    }).then(function() {
+      return ensBidToken.balanceOf(accounts[3]);
+    }).then(function(balance) {
+      receiver_end_token = balance.valueOf();
+      assert.equal(receiver_end_token - token, receiver_start_token, "token transfer wasn't correctly");
+    });
+  });
+
+  /**
+   * 4.11. allow another sender to withdraw from origin sender account
+   * 4.12. returns the amount which another sender is still allowed to withdraw from origin sender
+   */
+  it("4.11. allow another sender to withdraw from origin sender account \r\n      " + 
+    "4.12. returns the amount which another sender is still allowed to withdraw from origin sender", function() {
+    var ensBidToken;
+
+    return ENSBidToken.deployed().then(function(instance) {
+      ensBidToken = instance;
+      return ensBidToken.approve(accounts[7], 1, {from: accounts[0]});
+    }).then(function() {
+      return ensBidToken.allowance(accounts[0], accounts[7]);
+    }).then(function(remaing) {
+      assert.equal(remaing, 1, "remaing token amount wasn't correctly");
+    });
+  });
+
+  /**
+   * 4.13. funder should transfer tokens from one address to another success over lock period
+   */
+  it("4.13. funder should transfer tokens from one address to another success over lock period", function() {
+    var ensBidToken;
+    var sender_start_token;
+    var sender_end_token;
+    var receiver_start_token;
+    var receiver_end_token;
+    var token = 1;
+
+    return ENSBidToken.deployed().then(function(instance) {
+      ensBidToken = instance;
+      return ensBidToken.balanceOf(accounts[0]);
+    }).then(function(balance) {
+      sender_start_token = balance.toNumber();
+      return ensBidToken.balanceOf(accounts[7]);
+    }).then(function(balance) {
+      receiver_start_token = balance.toNumber();
+      return ensBidToken.transferFrom(accounts[0], accounts[7], token, {from: accounts[7]});
+    }).then(function() {
+      return ensBidToken.balanceOf(accounts[0]);
+    }).then(function(balance) {
+      sender_end_token = balance.toNumber();
+      return ensBidToken.balanceOf(accounts[7]);
+    }).then(function(balance) {
+      receiver_end_token = balance.toNumber();
+      assert.equal(sender_start_token - token, sender_end_token, "sender token balance wasn't correctly");
+      assert.equal(receiver_end_token - token, receiver_start_token, "receiver token balance wasn't correctly");
+    });
+  });
+
+  /**
    * 6.1. should pause contract success
    */
   it("6.1. should pause contract success", function() {
@@ -415,4 +534,52 @@ contract("ENSBidToken", function(accounts) {
       assert.equal(owner, accounts[1], "transfer ownership wasnt' correctly");
     });
   });
+
+  /**
+   * 8.1. owner should share benefit success
+   */
+  it("8.1. owner should share benefit success", function() {
+    var ensBidToken;
+    var address = [];
+    var benefitInWei = [];
+    address.push(accounts[2]);
+    address.push(accounts[4]);
+    benefitInWei.push(5);
+    benefitInWei.push(6);
+
+    return ENSBidToken.deployed().then(function(instance) {
+      ensBidToken = instance;
+      return ensBidToken.shareBenefit(address, benefitInWei, {from: accounts[1], gas: 4000000});
+    }).then(function() {
+      return ensBidToken.shareHolders.call(accounts[2]);
+    }).then(function(shareHolder) {
+      assert.equal(shareHolder[2].toNumber(), 5, "non-owner share benefit should fail wasn't correctly");
+      return ensBidToken.shareHolders.call(accounts[4]);
+    }).then(function(shareHolder) {
+      assert.equal(shareHolder[2].toNumber(), 6, "non-owner share benefit should fail wasn't correctly");
+    });
+  });
+
+  /**
+   * 8.2. non-owner should share benefit fail
+   */
+  it("8.2. non-owner should share benefit fail", function() {
+    var ensBidToken;
+    var address = [];
+    var benefitInWei = [];
+    address.push(accounts[2]);
+    address.push(accounts[4]);
+    benefitInWei.push(5);
+    benefitInWei.push(6);
+
+    return ENSBidToken.deployed().then(function(instance) {
+      ensBidToken = instance;
+      return ensBidToken.shareBenefit(address, benefitInWei, {from: accounts[0], gas: 4000000});
+    }).then(function() {
+      assert.equal(false, true, "non-owner share benefit should fail wasn't correctly");
+    }).catch(function(err) {
+      assert.isDefined(err, "non-owner should share benefit should have thrown");
+    });
+  });
+
 });

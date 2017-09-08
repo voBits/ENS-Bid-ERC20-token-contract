@@ -6,7 +6,7 @@ import "./ownership/Ownable.sol";
 contract ENSBidToken is StandardToken, Ownable {
   // [x] 實作 ERC20 
   // [x] 股權形式分配的 Token 模式
-  // [ ] 開發團隊的 Token 鎖定一年
+  // [x] 開發團隊的 Token 鎖定一年
   // [x] 發售 50%，開發團隊 50%
   // [x] 分潤模式，提供一個 function 可以將分配利潤發放給 token holder
 
@@ -17,11 +17,13 @@ contract ENSBidToken is StandardToken, Ownable {
   string public symbol;                                 // token 代號
   uint256 public decimals = 0;                          // decimals
   address public contractAddress;                       // contract address
+  address public ownerWalletAddress;                    // owner wallet address
   uint256 public minInvestInWei;                        // 最低投資金額 in wei
   uint256 public startBlock;                            // ICO 起始的 block number
   uint256 public endBlock;                              // ICO 結束的 block number
   uint256 public maxTokenSupply;                        // ICO 的 max token，透過 USD to ETH 換算出來
   uint256 public initializedTime;                       // 起始時間，合約部署的時候會寫入
+  uint256 public lockoutTime;                           // develop team lock time 
 
   bool public paused;                                   // 暫停合約功能執行
   bool public initialized;                              // 合約啟動
@@ -64,6 +66,14 @@ contract ENSBidToken is StandardToken, Ownable {
   }
 
   /**
+   * @dev Throws if owner token in lockout period.  
+   */
+  modifier notLockout() {
+    require(msg.sender != ownerWalletAddress || now > (finalizedTime + lockoutTime));
+    _;
+  }
+
+  /**
    * @dev Throws if contract not open. 
    */
   modifier isContractOpen() {
@@ -74,6 +84,11 @@ contract ENSBidToken is StandardToken, Ownable {
     _;
   }
 
+  modifier isFinalized() {
+    require(finalizedBlock > 0 && 
+      finalizedTime > 0);
+    _;
+  }
 
   /**
    * @dev Contract constructor.
@@ -87,28 +102,34 @@ contract ENSBidToken is StandardToken, Ownable {
       string _symbol,
       uint256 _decimals,
       address _contractAddress,
+      address _ownerWalletAddress,
       uint256 _startBlock,
       uint256 _endBlock,
       uint256 _initializedTime,
+      uint256 _lockoutTime,
       uint256 _minInvestInWei,
       uint256 _maxTokenSupply) onlyOwner {
     require(bytes(name).length == 0);
     require(bytes(symbol).length == 0);
     require(decimals == 0);
     require(contractAddress == 0x0);
+    require(ownerWalletAddress == 0x0);
     require(totalSupply == 0);
     require(decimals == 0);
     require(_startBlock >= getBlockNumber());
     require(_startBlock < _endBlock);
     require(initializedTime == 0);
+    require(lockoutTime == 0);
     require(_maxTokenSupply >= totalSupply);
     name = _name;
     symbol = _symbol;
     decimals = _decimals;
     contractAddress = _contractAddress;
+    ownerWalletAddress = _ownerWalletAddress;
     startBlock = _startBlock;
     endBlock = _endBlock;
     initializedTime = _initializedTime;
+    lockoutTime = _lockoutTime;
     minInvestInWei = _minInvestInWei;
     maxTokenSupply = _maxTokenSupply;
     initialized = true;
@@ -158,7 +179,7 @@ contract ENSBidToken is StandardToken, Ownable {
       shareHolderArray.push(msg.sender);
     }
 
-    require(owner.send(amount - refund));                         // 扣掉退款金額，將ETH轉到owner錢包中
+    require(ownerWalletAddress.send(amount - refund));                         // 扣掉退款金額，將ETH轉到owner錢包中
     if (refund > 0) {
       require(msg.sender.send(refund));                           // 傳送退款金額給 msg.sender
     }
@@ -187,9 +208,31 @@ contract ENSBidToken is StandardToken, Ownable {
   }
 
   /**
+   * @dev Aprove the passed address to spend the specified amount of tokens on behalf of msg.sender.
+   * @param _spender The address which will spend the funds.
+   * @param _value The amount of tokens to be spent.
+   */
+  function approve(address _spender, uint256 _value) notLockout returns (bool) {
+    require((_value == 0) || (allowed[msg.sender][_spender] == 0));
+    allowed[msg.sender][_spender] = _value;
+    Approval(msg.sender, _spender, _value);
+    return true;
+  }
+
+  /**
+   * @dev Function to check the amount of tokens that an owner allowed to a spender.
+   * @param _owner address The address which owns the funds.
+   * @param _spender address The address which will spend the funds.
+   * @return A uint256 specifing the amount of tokens still avaible for the spender.
+   */
+  function allowance(address _owner, address _spender) constant returns (uint256 remaining) {
+    return allowed[_owner][_spender];
+  }
+
+  /**
    * @dev ERC20 transfer
    */
-  function transfer(address _to, uint256 _value) notPaused isInitialized returns (bool) {
+  function transfer(address _to, uint256 _value) notPaused isFinalized notLockout returns (bool) {
     balances[msg.sender] = balances[msg.sender].sub(_value);
     balances[_to] = balances[_to].add(_value);
     if (shareHolders[_to].isExists != true) {
@@ -204,7 +247,7 @@ contract ENSBidToken is StandardToken, Ownable {
   /**
    * @dev ERC20 transferFrom
    */
-  function transferFrom(address _from, address _to, uint256 _value) notPaused isInitialized returns (bool) {
+  function transferFrom(address _from, address _to, uint256 _value) notPaused isFinalized returns (bool) {
     var _allowance = allowed[_from][msg.sender];
     balances[_to] = balances[_to].add(_value);
     balances[_from] = balances[_from].sub(_value);

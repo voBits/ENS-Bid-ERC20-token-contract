@@ -20,6 +20,12 @@
     - [x] `approve`: allow another sender to withdraw from origin sender account
     - [x] `allowance`: returns the amount which another sender is still allowed to withdraw from origin sender
     - [x] `transferFrom`: sender transfer tokens from one address to another
+    - [x] `transfer`: funder should transfer fail during lock period
+    - [x] `transferFrom`: funder should transfer tokens from one address to another fail during lock period
+    - [x] `transfer`: funder should transfer success over lock period
+    - [x] `approve`: funder allow another sender to withdraw from funder account
+    - [x] `allowance`: returns the amount which another sender is still allowed to withdraw from funder account
+    - [x] `transferFrom`: funder should transfer tokens from one address to another success over lock period
 - owner transfer token
     - [x] `transfer`: owner should transfer fail when token locked
     - [x] `transfer`: owner should transfer success when token unlocked
@@ -29,3 +35,6 @@
 - ownership switch
     - [x] `transferOwnership`: transfer ownership should fail when not owner
     - [x] `transferOwnership`: transfer ownership should success when not owner
+- share benefit
+    - [x] `shareBenefit`: owner should share benefit success
+    - [x] `shareBenefit`: non-owner should share benefit fail
