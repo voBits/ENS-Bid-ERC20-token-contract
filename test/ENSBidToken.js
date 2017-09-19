@@ -582,4 +582,22 @@ contract("ENSBidToken", function(accounts) {
     });
   });
 
+  /**
+   * 9.1. owner should store benefit report sucess
+   */
+  it("9.1. owner should store benefit report sucess", function() {
+    var ensBidToken;
+    var year = 2017;
+    var month = 12;
+
+    return ENSBidToken.deployed().then(function(instance) {
+      ensBidToken = instance;
+      return ensBidToken.depositBenefit(year, month, {from: accounts[1], value: web3.toWei(1, "ether")});
+    }).then(function() {
+      return ensBidToken.benefitReportArray.call(0);
+    }).then(function(benefitReport) {
+      assert.equal(benefitReport[0].toNumber(), year, "owner store benefit should success wasn't correctly");
+      assert.equal(benefitReport[1].toNumber(), month, "owner store benefit should success wasn't correctly");
+    });
+  });
 });

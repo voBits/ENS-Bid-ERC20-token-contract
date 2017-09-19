@@ -11,6 +11,7 @@ contract ENSBidToken is StandardToken, Ownable {
   // [x] 分潤模式，提供一個 function 可以將分配利潤發放給 token holder
 
   event ShareBenefit(string _tx, address _shareHolder, uint256 _balance, uint256 _shareBenefit);
+  event BenefitReportInfo(uint _year, uint _month, uint256 _benefitInWei);
   event Finalized();
 
   string public name;                                   // 名稱
@@ -36,10 +37,18 @@ contract ENSBidToken is StandardToken, Ownable {
     uint256 shareBenefitInWei;  
   }
 
+  struct BenefitReport {
+    uint year;
+    uint month;
+    uint256 benefitInWei;
+  }
+
   ShareHolder public shareHolder;
+  BenefitReport public benefitReport;
 
   mapping (address => ShareHolder) public shareHolders; 
   address[] public shareHolderArray;                    // share holder array
+  BenefitReport[] public benefitReportArray;
   
   /**
    * @dev Throws if contract paused.
@@ -276,5 +285,16 @@ contract ENSBidToken is StandardToken, Ownable {
       shareHolders[_shareHolder].shareBenefitInWei += _benefitInWei[i];
       i++;
     }
+  }
+
+  /**
+   * @dev owner deposit benefit ETH and store in BenefitReport
+   * @param _year year of benefit report
+   * @param _month month of benefit report
+   */
+  function depositBenefit(uint _year, uint _month) onlyOwner payable {
+    require(msg.value > 0);
+    benefitReportArray.push(BenefitReport(_year, _month, msg.value));
+    BenefitReportInfo(_year, _month, msg.value);
   }
 }

@@ -38,3 +38,6 @@
 - share benefit
     - [x] `shareBenefit`: owner should share benefit success
     - [x] `shareBenefit`: non-owner should share benefit fail
+- benefit report
+    - [x] `depositBenefit`: owner should store benefit report sucess
+    
